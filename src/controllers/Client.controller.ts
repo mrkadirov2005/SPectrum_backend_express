@@ -87,7 +87,7 @@ export const updateClient = async (req: Request, res: Response) => {
     const adminUuid = req.body.uuid;  // Assuming the admin's UUID is sent with the request
 
     const client = await Client.findOneAndUpdate(
-      { uuid: req.params.uuid },
+      { uuid: req.body.uuid },
       { first_name, last_name, email, phone, is_active, uuid,password },
       { new: true }
     );

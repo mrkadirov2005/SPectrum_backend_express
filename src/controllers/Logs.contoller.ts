@@ -84,9 +84,10 @@ const allLogs=await Log.find().sort({date:-1})
   }
 }
 
-export const getLogsByUserUuid = async (req: Request<{ userUuid: string }, {}, {}, {}>, res: Response): Promise<void> => {
+export const getLogsByUserUuid = async (req: Request, res: Response): Promise<void> => {
   try {
-  const userUuid=getClientUuidFromToken(req)
+  const userUuid=req.headers.authorization;
+  console.log(userUuid)
 
 
     const logs = await Log.find({ userUuid }).sort({ date: -1 }); // Sort logs by date, descending
@@ -97,6 +98,7 @@ export const getLogsByUserUuid = async (req: Request<{ userUuid: string }, {}, {
     }
 
     res.status(200).json(logs);
+    return;
   } catch (error) {
     res.status(500).json({
       message: error instanceof Error ? error.message : 'Unknown error'

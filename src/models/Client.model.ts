@@ -6,7 +6,8 @@ export interface IClient extends Document {
   n_members: number;
   email: string;
   password: string;
-  username:string,
+  username:string;
+  access_modules:string[]
   phone: string;
   is_active: boolean;
   uuid: string;
@@ -22,6 +23,7 @@ const ClientSchema: Schema = new Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     username:{type:String,required:true},
+    salary:{type:[{type:String}],required:true},
     phone: { type: String, required: true, unique: true },
     is_active: { type: Boolean, default: true },
     uuid: { type: String, required: true, unique: true },

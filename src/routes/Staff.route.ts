@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/', createStaff);
 router.get('/', getAllStaff);
 router.get('/groups', getMyGroups);
-router.get('/:uuid', getStaffByUuid);
+router.post('/uuid', getStaffByUuid);
 router.put('/:uuid', updateStaff);
 router.delete('/:uuid', deleteStaff);
 

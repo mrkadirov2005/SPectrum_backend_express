@@ -32,8 +32,8 @@ connectDB();
 
 // Route handlers
 // Explicitly tell TypeScript that `clientRoutes` is an express.Router
-app.use('/client', clientRoutes as Router);  //done
-app.use('/admin', adminRoute as Router);//done
+app.use('/client', clientRoutes);  //done
+app.use('/admin', adminRoute );//done
 app.use('/staff',staffRoute);//done
 app.use('/student',studentRoute);//done
 app.use('/test',testRoute);//done

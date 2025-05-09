@@ -45,9 +45,10 @@ export const createAdmin = async (req: Request, res: Response) => {
       return;
     }
 
-    const { email, password, username, is_active, accessible_groups_list, uuid,client_id } = req.body;
+    const { email, password,full_name, username, is_active, accessible_groups_list, uuid,client_id } = req.body;
 
     const newAdmin = new Admin({
+      full_name,
       email,
       password,
       username,
@@ -82,23 +83,21 @@ export const getAdmins = async (_req: Request, res: Response) => {
 
 // GET ADMIN BY UUID
 export const getAdminByUuid = async (req: Request, res: Response) => {
-  const clientUuid = getClientUuidFromToken(req);
-  if (!clientUuid) {
+  console.log("req came")
+  const uuid = getClientUuidFromToken(req);
+  console.log(uuid)
+  if (!uuid) {
      res.status(401).json({ message: 'Unauthorized: No client token' });
      return;
   }
-  const {uuid} =req.body;
+  // const {uuid} =req.body;
   try {
-    const admin  = await Admin.findOne({ uuid }) as IAdmin;
+    const admin  = await Admin.find({ client_id:uuid }) as IAdmin[];
     if (!admin) {
       res.status(404).json({ message: 'Admin not found' });
       return;
     }
-    if(admin.client_id !== clientUuid) {
-      console.log(req.body.client_id,clientUuid);
-      res.status(403).json({ message: 'Forbidden: You do not have access to this admin' }); 
-      return;
-    }
+    
     res.status(200).json(admin);
     return;
   } catch (error) {
@@ -263,14 +262,13 @@ export const removeGroup = async (req: Request, res: Response) => {
   console.log("here is the remove group")
   try {
     // Extract admin UUID from token
-    const client_id = getAdminUuidFromToken(req);
-    console.log("client_id",client_id)
-    if (!client_id) {
+    const token = getAdminUuidFromToken(req);
+    if (!token) {
        res.status(401).json({ message: 'Unauthorized: No token or invalid token' });
        return;
     }
 
-    const { name } = req.body;
+    const { name,uuid,client_id } = req.body;
     if (!name) {
        res.status(400).json({ message: 'Group name is required' });
        return;
@@ -297,10 +295,13 @@ export const removeGroup = async (req: Request, res: Response) => {
     await admin.save();
 
     // Optionally log the event (You can use a logging service or write to a file)
-    logEvent('Group removed by ' + client_id, client_id); // Assuming `logEvent` is a utility function
-
-    res.status(200).json({ message: 'Group removed successfully', admin });
-    return;
+    logEvent('Group removed by ' + token, token); // Assuming `logEvent` is a utility function
+    const isDeleted=await GroupModel.deleteOne({client_id,uuid})
+    if(isDeleted.acknowledged){
+      res.status(200).json({ message: 'Group removed successfully',admin });
+      return
+    }
+    
   } catch (error) {
     res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });
     return;
@@ -325,23 +326,23 @@ export const getGroups = async (req: Request, res: Response) => {
   }
 };
 export const getGroupById = async (req: Request, res: Response) => {
-  const adminUuid = getAdminUuidFromToken(req);
-  if (!adminUuid) {
+  const token = getAdminUuidFromToken(req);
+  if (!token) {
     res.status(401).json({ message: 'Unauthorized: No token or invalid token' });
     return;
   }
-  const { uuid } = req.body;
+  const uuid  = req.headers.uuid;
+  if(!uuid){
+    res.status(400).json({message:"No client uuid provided"});
+    return;
+  }
   try {
-    const group = await GroupModel.findOne({uuid});
+    const group = await GroupModel.find({client_id:uuid});
     if (!group) {
       res.status(404).json({ message: 'Group not found' });
       return;
     }
-    if(group.client_id!=adminUuid){
-      console.log(req.body.client_id,adminUuid);
-      res.status(403).json({ message: 'Forbidden: You do not have access to this group' }); 
-      return;
-    }
+    
     // Check if the group is in the admin's accessible groups list
     
     res.status(200).json(group);
@@ -354,14 +355,16 @@ export const getGroupById = async (req: Request, res: Response) => {
 
 // UPDATE GROUP NAME
 export const updateGroup = async (req: Request, res: Response) => {
+  console.log("req came for updating group")
   try {
-    const { oldGroupName, newGroupName } = req.body;
+    const { oldGroupName, newGroupName,client_id } = req.body;
     if (!oldGroupName || !newGroupName) {
       res.status(400).json({ message: 'Old and new group names are required' });
       return;
     }
 
-    const admin = await Admin.findById(req.params.adminId);
+    const admin = await Admin.findOne({uuid:client_id});
+    console.log("client id",admin)
     if (!admin) {
       res.status(404).json({ message: 'Admin not found' });
       return;
@@ -375,9 +378,11 @@ export const updateGroup = async (req: Request, res: Response) => {
 
     admin.accessible_groups_list[groupIndex] = newGroupName;
     await admin.save();
-
-    res.status(200).json({ message: 'Group updated successfully', admin });
-    return;
+    const isGroupUpdated=await GroupModel.updateOne({name:oldGroupName},{$set:{name:newGroupName}});
+    if(isGroupUpdated.acknowledged){
+      res.status(200).json({message:"Group name updated successfully"});
+      return;
+    }
   } catch (error) {
     res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });
     return;

@@ -133,29 +133,21 @@ export const getStaffByUuid = async (req: Request, res: Response): Promise<void>
   return;
 }
   try {
-    const staff = await Staff.findOne({ uuid: req.body.uuid });
+    const staff = await Staff.find({ adminId: req.body.uuid });
     if (!staff) {
       res.status(404).json({ message: 'Staff not found' });
       return;
     }
-if(req.body.uuid!=staff.uuid){
-  res.status(400).json({ message: 'Bad Request: UUID is required' });
-  return;
-}
+// if(req.body.uuid!=staff.uuid){
+//   res.status(400).json({ message: 'Bad Request: UUID is required' });
+//   return;
+// }
 res.status(200).json(staff);
 
     // Log the action (who fetched the staff by UUID and when)
     const token = req.headers.authorization?.split(' ')[1];
     if (token) {
-      const decoded = jwt.verify(token, SECRET_KEY) as { uuid: string };
-      const admin_uuid = decoded.uuid;
-
-      const admin = await Admin.findOne({ uuid: admin_uuid });
-      if (admin) {
-        const logMessage = `Admin (${admin_uuid}) fetched staff record with UUID: ${staff.uuid}, date: ${new Date()}`;
-        admin.logs.push(logMessage);
-        await admin.save();
-      }
+      logEvent(adminId,"Client with "+adminId+ "fetched staff  data");
     }
   } catch (error) {
     res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });

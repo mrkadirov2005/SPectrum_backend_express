@@ -66,7 +66,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
     res.status(200).json({
       message: 'Login successful',
-      token,  // The generated JWT token
+      token, 
+      role:userRole.role, // The generated JWT token
       user
     });
   } catch (error) {
